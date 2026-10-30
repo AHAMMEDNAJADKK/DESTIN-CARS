@@ -1,0 +1,118 @@
+/* ==============================================================================
+   DESTIN CABS — DEDICATED PRINT STYLESHEET
+   Company: DESTIN PRIVATE LIMITED
+   Format: Official A4 Portrait Trip Voucher
+   ============================================================================== */
+
+/* 1. Normal Screen View: Hide print voucher completely */
+.trip-voucher-print-wrapper {
+  display: none !important;
+}
+
+/* 2. Print Media View: Display ONLY the dedicated print voucher */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  /* Reset body and hide all default page content */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #102B24 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide the entire interactive application */
+  #root > *:not(.trip-voucher-print-wrapper) {
+    display: none !important;
+  }
+
+  header,
+  nav,
+  footer,
+  button,
+  input,
+  textarea,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Exclusively display the dedicated print wrapper */
+  .trip-voucher-print-wrapper {
+    display: block !important;
+    position: static !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .trip-voucher-print-wrapper * {
+    visibility: visible !important;
+  }
+
+  /* Document Container */
+  .tv-print-doc {
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #102B24 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    border: 1.5px solid #003D2F !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Header */
+  .tv-print-header {
+    background-color: #003D2F !important;
+    color: #ffffff !important;
+    padding: 14px 18px !important;
+    border-bottom: 3px solid #D8EB29 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Tables & Grids */
+  .tv-print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+  }
+
+  .tv-print-table th,
+  .tv-print-table td {
+    border: 1px solid #DCE7E0 !important;
+    padding: 6px 10px !important;
+    text-align: left !important;
+  }
+
+  .tv-print-table th {
+    background-color: #F5F8F5 !important;
+    color: #003D2F !important;
+    font-weight: 700 !important;
+    font-size: 8.5pt !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent page breaks inside critical elements */
+  .tv-print-section,
+  .tv-print-payment-box,
+  .tv-print-signatures {
+    page-break-inside: avoid !important;
+  }
+}

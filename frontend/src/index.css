@@ -34,7 +34,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 6mm;
+    margin: 12mm;
   }
 
   body {
@@ -44,6 +44,11 @@
     margin: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Exclusively print the dedicated TripVoucherPrint component */
+  #root > *:not(.trip-voucher-print-wrapper) {
+    display: none !important;
   }
 
   .no-print {

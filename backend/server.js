@@ -111,8 +111,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// 8. Production Health Check Endpoint (No Secrets Exposed)
-app.get('/api/health', (req, res) => {
+// 8. Production Health Check Endpoint (Mounted on /api/health and /health)
+const healthHandler = (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
   const dbStatusMap = {
     0: 'disconnected',
@@ -135,16 +135,20 @@ app.get('/api/health', (req, res) => {
     environment: NODE_ENV,
     timestamp: new Date().toISOString()
   });
-});
+};
 
-// 9. Mount Voucher API routes
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
+
+// 9. Mount Voucher API routes (Mounted on both /api/vouchers and /vouchers)
 app.use('/api/vouchers', writeLimiter, voucherRoutes);
+app.use('/vouchers', writeLimiter, voucherRoutes);
 
-// 10. 404 Route Handler
+// 10. 404 Route Handler (Always JSON)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Resource not found: ${req.originalUrl}`
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`
   });
 });
 
