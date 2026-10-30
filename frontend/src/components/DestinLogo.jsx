@@ -13,6 +13,9 @@ const DestinLogo = ({ variant = 'dark', className = 'h-8 w-auto', showCompany = 
       <div className="inline-flex flex-col items-center">
         <svg
           viewBox="0 0 566.929 566.929"
+          width="100%"
+          height="100%"
+          preserveAspectRatio="xMidYMid meet"
           className={`${className} rounded-xl shadow-md`}
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -64,6 +67,9 @@ const DestinLogo = ({ variant = 'dark', className = 'h-8 w-auto', showCompany = 
     <div className="inline-flex flex-col">
       <svg
         viewBox="131.09 253.80 304.75 59.34"
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid meet"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block' }}

@@ -20,6 +20,9 @@ import {
 } from './utils/calculations';
 import { formatDateInput } from './utils/formatters';
 import { generateVoucherPDF, printVoucher } from './utils/pdfGenerator';
+import DestinLogo from './components/DestinLogo';
+import { Loader2, Download, AlertCircle, RefreshCw } from 'lucide-react';
+import TripVoucherPrint from './components/TripVoucherPrint';
 
 const initialFormState = {
   voucherNumber: '',
@@ -53,9 +56,12 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('form'); // 'form' | 'preview'
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [apiConnectionError, setApiConnectionError] = useState(null);
+  const [printVoucherData, setPrintVoucherData] = useState(null);
 
   // Saved vouchers drawer state
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
@@ -74,9 +80,10 @@ function App() {
     }, 6000);
   };
 
-  // Initialize new sequential voucher number
+  // Initialize new sequential voucher number from MongoDB
   const loadNextVoucherNumber = useCallback(async () => {
     try {
+      setApiConnectionError(null);
       const nextNumber = await fetchNextVoucherNumber();
       setFormData((prev) => ({
         ...prev,
@@ -85,7 +92,14 @@ function App() {
       }));
       setHasUnsavedChanges(false);
     } catch (err) {
-      console.error(err);
+      console.error('[Destin Cabs API Error] Could not load next voucher number:', err);
+      setApiConnectionError(err.message || 'Could not connect to Destin Cabs server');
+      setFormData((prev) => ({
+        ...prev,
+        voucherNumber: prev.voucherNumber || 'DC-OFFLINE-DRAFT',
+        date: formatDateInput()
+      }));
+      notify('error', 'API Connection Failure', err.message || 'Backend server is not responding. Check VITE_API_URL or wait if Render is waking up.');
     }
   }, []);
 
@@ -284,10 +298,19 @@ function App() {
       }
 
       setHasUnsavedChanges(false);
+      setApiConnectionError(null);
       loadSavedVouchers();
     } catch (err) {
-      console.error(err);
-      notify('error', 'Save Error', err.message || 'Could not save voucher to MongoDB.');
+      console.error('[Destin Cabs Save Error]', err);
+      if (err.isNetworkError) {
+        notify('error', 'Network Connection Error', 'Could not reach server. The backend may be offline or sleeping on Render.');
+      } else if (err.status === 404) {
+        notify('error', 'API 404 Error', err.message || 'API endpoint not found. Verify VITE_API_URL in Vercel.');
+      } else if (err.status === 409) {
+        notify('error', 'Duplicate Number', err.message);
+      } else {
+        notify('error', 'MongoDB Save Error', err.message || 'Could not save voucher to MongoDB.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -301,15 +324,23 @@ function App() {
     }
     setEditingId(null);
     setErrors({});
-    const nextNumber = await fetchNextVoucherNumber();
+    let nextNum = '';
+    try {
+      nextNum = await fetchNextVoucherNumber();
+      setApiConnectionError(null);
+    } catch (err) {
+      nextNum = 'DC-OFFLINE-DRAFT';
+      setApiConnectionError(err.message);
+      notify('error', 'Connection Notice', 'Could not retrieve voucher number from server. Backend may be offline.');
+    }
     setFormData({
       ...initialFormState,
-      voucherNumber: nextNumber,
+      voucherNumber: nextNum,
       date: formatDateInput()
     });
     setHasUnsavedChanges(false);
     setActiveView('form');
-    notify('info', 'New Voucher Form Ready', 'Form initialized with next sequential voucher number.');
+    notify('info', 'New Voucher Form Ready', 'Form initialized.');
   };
 
   // Select voucher from saved list to edit
@@ -346,21 +377,40 @@ function App() {
     }
   };
 
-  // Print voucher
-  const handlePrint = () => {
-    printVoucher();
+  // Print voucher using the dedicated TripVoucherPrint component
+  const handlePrint = (voucherData = null) => {
+    const targetVoucher = voucherData || formData;
+    setPrintVoucherData(targetVoucher);
+    // Allow state to flush before opening native print dialog
+    setTimeout(() => {
+      window.print();
+    }, 80);
   };
 
   // Download high-resolution PDF
   const handleDownloadPDF = async () => {
-    if (!printablePreviewRef.current) return;
+    if (isGeneratingPDF) return;
+
+    // Use dedicated offscreen preview, or fallback to any mounted voucher preview in DOM
+    const targetElement =
+      printablePreviewRef.current || document.querySelector('.voucher-container');
+
+    if (!targetElement) {
+      notify('error', 'PDF Error', 'Voucher document preview is not ready for export.');
+      return;
+    }
+
     try {
-      notify('info', 'Rendering PDF', 'Generating high-resolution official A4 voucher...');
-      await generateVoucherPDF(printablePreviewRef.current, formData.voucherNumber);
-      notify('success', 'PDF Ready', `Voucher ${formData.voucherNumber} exported successfully.`);
+      setIsGeneratingPDF(true);
+      notify('info', 'Rendering PDF', 'Generating high-resolution official A4 trip voucher...');
+      const voucherNum = formData.voucherNumber || 'DRAFT';
+      await generateVoucherPDF(targetElement, voucherNum);
+      notify('success', 'PDF Ready', `Voucher ${voucherNum} exported successfully.`);
     } catch (err) {
-      console.error(err);
+      console.error('[App PDF Download Error]', err);
       notify('error', 'PDF Error', err.message || 'Failed to generate PDF document');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -372,30 +422,57 @@ function App() {
         onNewVoucher={handleResetForm}
         onOpenSaved={() => setIsSavedModalOpen(true)}
         savedCount={savedVouchers.length}
-        onPrint={handlePrint}
+        onPrint={() => handlePrint(formData)}
         onDownloadPDF={handleDownloadPDF}
         activeView={activeView}
         onToggleView={setActiveView}
         isEditing={Boolean(editingId)}
         voucherNumber={formData.voucherNumber}
+        isGeneratingPDF={isGeneratingPDF}
       />
 
+      {/* Offline / Server Wake-up Notice Banner */}
+      {apiConnectionError && (
+        <div className="no-print bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Server Connection Notice:</strong> {apiConnectionError}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              loadNextVoucherNumber();
+              loadSavedVouchers();
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-200 hover:bg-amber-300 rounded font-bold text-amber-950 transition-colors shrink-0"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Working View */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-12">
         {activeView === 'form' ? (
-          <TripVoucherForm
-            formData={formData}
-            errors={errors}
-            onChange={handleFieldChange}
-            onSave={handleSaveVoucher}
-            onPrint={handlePrint}
-            onDownloadPDF={handleDownloadPDF}
-            onReset={handleResetForm}
-            onPreview={() => setActiveView('preview')}
-            isEditing={Boolean(editingId)}
-            isSaving={isSaving}
-            hasUnsavedChanges={hasUnsavedChanges}
-          />
+          <div className="no-print">
+            <TripVoucherForm
+              formData={formData}
+              errors={errors}
+              onChange={handleFieldChange}
+              onSave={handleSaveVoucher}
+              onPrint={handlePrint}
+              onDownloadPDF={handleDownloadPDF}
+              onReset={handleResetForm}
+              onPreview={() => setActiveView('preview')}
+              isEditing={Boolean(editingId)}
+              isSaving={isSaving}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isGeneratingPDF={isGeneratingPDF}
+            />
+          </div>
         ) : (
           <div className="max-w-4xl mx-auto my-6 px-3 sm:px-6">
             <div className="no-print mb-4 flex items-center justify-between bg-white p-3.5 rounded-xl border border-[#DCE7E0] shadow-sm">
@@ -420,9 +497,15 @@ function App() {
                 <button
                   type="button"
                   onClick={handleDownloadPDF}
-                  className="px-3 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-xs font-black text-[#003D2F] transition-colors"
+                  disabled={isGeneratingPDF}
+                  className="px-3 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-xs font-black text-[#003D2F] transition-colors flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Download PDF
+                  {isGeneratingPDF ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#003D2F]" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isGeneratingPDF ? 'Generating...' : 'Download PDF'}</span>
                 </button>
               </div>
             </div>
@@ -431,11 +514,44 @@ function App() {
           </div>
         )}
 
-        {/* Hidden / Always-ready Preview Anchor for High-Res PDF capture & Native Print */}
-        <div className="hidden print:block fixed -left-[9999px] top-0 print:static print:left-auto">
+        {/* Dedicated Off-Screen A4 Container for High-Res PDF capture & Native Print */}
+        <div
+          className="fixed -left-[9999px] top-0 print:static print:left-auto"
+          style={{
+            width: '800px',
+            minWidth: '800px',
+            maxWidth: '800px',
+            visibility: 'visible',
+            pointerEvents: 'none',
+            zIndex: -9999
+          }}
+          aria-hidden="true"
+        >
           <VoucherPreview formData={formData} previewRef={printablePreviewRef} />
         </div>
       </main>
+
+      {/* Minimal Professional Page Footer */}
+      <footer className="no-print bg-white border-t border-[#DCE7E0] py-6 px-4 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <DestinLogo variant="light" className="h-5 w-auto" />
+            <div className="text-xs">
+              <span className="font-bold text-[#003D2F]">DESTIN CABS</span>
+              <span className="text-[#718078] mx-1.5">•</span>
+              <span className="font-semibold text-[#102B24]">DESTIN PRIVATE LIMITED</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-[#718078] max-w-xl leading-relaxed">
+            Suite No.1067, 2nd, Kc Arcade, 24/1701, near TV Centre, P.O, CSEZ, Kakkanad, Kochi, Keralam 682037
+          </p>
+
+          <div className="text-[11px] text-[#718078] font-medium shrink-0">
+            Helpline: <a href="tel:+919526886600" className="text-[#003D2F] font-bold hover:underline">+91 95268 86600</a>
+          </div>
+        </div>
+      </footer>
 
       {/* Saved Vouchers Modal Drawer */}
       <SavedVouchersModal
@@ -443,8 +559,7 @@ function App() {
         onClose={() => setIsSavedModalOpen(false)}
         onSelectVoucher={handleSelectVoucherToEdit}
         onPrintVoucher={(voucher) => {
-          handleSelectVoucherToEdit(voucher);
-          setTimeout(() => printVoucher(), 400);
+          handlePrint(voucher);
         }}
         onDownloadVoucherPDF={(voucher) => {
           handleSelectVoucherToEdit(voucher);
@@ -465,6 +580,11 @@ function App() {
         notification={notification}
         onClose={() => setNotification(null)}
       />
+
+      {/* Dedicated Print-Only Voucher Document (Hidden on screen, exclusively visible during browser print) */}
+      <div className="trip-voucher-print-wrapper" aria-hidden="true">
+        <TripVoucherPrint voucher={printVoucherData || formData} />
+      </div>
 
     </div>
   );

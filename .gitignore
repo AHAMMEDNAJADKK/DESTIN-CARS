@@ -1,5 +1,37 @@
-node_modules
+# ==============================================================================
+# DESTIN CABS — GIT IGNORE SPECIFICATION
+# ==============================================================================
+
+# Dependencies
+node_modules/
+*/node_modules/
+package-lock.json.bak
+
+# Secrets & Environment Files — NEVER COMMIT SENSITIVE VALUES
 .env
-dist
-.DS_Store
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Production Builds
+dist/
+dist-ssr/
+build/
+*.local
+
+# Logs & Debugging
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor & OS Metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
