@@ -1,5 +1,31 @@
-const API_BASE = '/api/vouchers';
+/**
+ * Centralized API Client for Destin Cabs Trip Voucher Management System
+ * Supports both Vercel Production deployment via VITE_API_URL and local Vite development proxy.
+ */
 
+// Retrieve configured API base URL (defaults to '/api' for Vite local proxy)
+const RAW_API_URL = import.meta.env.VITE_API_URL || '/api';
+const BASE_URL = RAW_API_URL.replace(/\/+$/, '');
+const API_BASE = `${BASE_URL}/vouchers`;
+
+/**
+ * Checks backend health endpoint
+ * @returns {Promise<Object>} Health status payload
+ */
+export const checkApiHealth = async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/health`);
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch (error) {
+    return { ok: false, status: 0, error: error.message };
+  }
+};
+
+/**
+ * Fetches the next sequential voucher number from backend
+ * Fallback generates formatted number if offline
+ */
 export const fetchNextVoucherNumber = async () => {
   try {
     const res = await fetch(`${API_BASE}/next-number`);
@@ -14,6 +40,10 @@ export const fetchNextVoucherNumber = async () => {
   }
 };
 
+/**
+ * Creates a new trip voucher
+ * @param {Object} voucherData
+ */
 export const createVoucher = async (voucherData) => {
   const res = await fetch(API_BASE, {
     method: 'POST',
@@ -28,6 +58,11 @@ export const createVoucher = async (voucherData) => {
   return data;
 };
 
+/**
+ * Updates an existing trip voucher
+ * @param {string} id
+ * @param {Object} voucherData
+ */
 export const updateVoucher = async (id, voucherData) => {
   const res = await fetch(`${API_BASE}/${id}`, {
     method: 'PUT',
@@ -42,6 +77,10 @@ export const updateVoucher = async (id, voucherData) => {
   return data;
 };
 
+/**
+ * Retrieves vouchers list with search and filter parameters
+ * @param {Object} params - { search, date, startDate, endDate, page }
+ */
 export const getVouchers = async (params = {}) => {
   const query = new URLSearchParams();
   if (params.search) query.append('search', params.search);
@@ -56,6 +95,10 @@ export const getVouchers = async (params = {}) => {
   return data;
 };
 
+/**
+ * Retrieves a single voucher by MongoDB ID
+ * @param {string} id
+ */
 export const getVoucherById = async (id) => {
   const res = await fetch(`${API_BASE}/${id}`);
   const data = await res.json();
@@ -63,6 +106,10 @@ export const getVoucherById = async (id) => {
   return data.data;
 };
 
+/**
+ * Deletes a voucher permanently
+ * @param {string} id
+ */
 export const deleteVoucher = async (id) => {
   const res = await fetch(`${API_BASE}/${id}`, {
     method: 'DELETE'

@@ -15,7 +15,7 @@ const errorHandler = require('./src/middleware/errorHandler');
 
 // 2. Validate essential environment configuration
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/destin_cabs';
+const HOST = '0.0.0.0'; // Render and cloud container standard
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
@@ -25,26 +25,63 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
 
-// 4. CORS configuration
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000'
-];
+// 4. Production CORS configuration for Render + Vercel
+const getCorsOrigins = () => {
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ];
 
-app.use(cors({
+  const envOrigins = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+  if (envOrigins) {
+    envOrigins.split(',').forEach((url) => {
+      const trimmed = url.trim().replace(/\/+$/, '');
+      if (trimmed && !defaultOrigins.includes(trimmed)) {
+        defaultOrigins.push(trimmed);
+      }
+    });
+  }
+
+  return defaultOrigins;
+};
+
+const corsOptions = {
   origin: (origin, callback) => {
+    // Allow non-browser requests (e.g. server-to-server health checks, curl, Render pings)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || NODE_ENV !== 'production') {
+
+    const allowed = getCorsOrigins();
+
+    // Check exact match in configured allowed origins
+    if (allowed.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Blocked by CORS policy'));
+
+    // In production, allow preview deployments on Vercel
+    if (/^https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // In non-production, allow any localhost/127.0.0.1 port
+    if (NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`[CORS Blocked] Origin: ${origin} not permitted`);
+    return callback(new Error(`Origin ${origin} blocked by CORS policy`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Disposition'],
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+// Handle preflight for all routes
+app.options('*', cors(corsOptions));
 
 // 5. Rate limiting for API write requests
 const writeLimiter = rateLimit({
@@ -62,7 +99,19 @@ const writeLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 7. Comprehensive Health Check Endpoint
+// 7. Base Welcome Endpoint for Web Service Discovery
+app.get('/', (req, res) => {
+  res.status(200).json({
+    application: 'DESTIN CABS Trip Voucher Management API',
+    company: 'DESTIN PRIVATE LIMITED',
+    tagline: 'Premium Destination Cab Services',
+    healthCheck: '/api/health',
+    status: 'online',
+    environment: NODE_ENV
+  });
+});
+
+// 8. Production Health Check Endpoint (No Secrets Exposed)
 app.get('/api/health', (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
   const dbStatusMap = {
@@ -72,7 +121,9 @@ app.get('/api/health', (req, res) => {
     3: 'disconnecting'
   };
 
-  res.status(isDbConnected ? 200 : 503).json({
+  const statusCode = isDbConnected ? 200 : 503;
+
+  res.status(statusCode).json({
     application: 'DESTIN CABS Trip Voucher Management System',
     company: 'DESTIN PRIVATE LIMITED',
     status: isDbConnected ? 'healthy' : 'unhealthy',
@@ -86,10 +137,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 8. Mount Voucher API routes
+// 9. Mount Voucher API routes
 app.use('/api/vouchers', writeLimiter, voucherRoutes);
 
-// 9. 404 Route Handler
+// 10. 404 Route Handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -97,10 +148,10 @@ app.use((req, res) => {
   });
 });
 
-// 10. Centralized Error Handler
+// 11. Centralized Error Handler
 app.use(errorHandler);
 
-// 11. Asynchronous server startup with MongoDB connection and EADDRINUSE safety
+// 12. Asynchronous server startup with MongoDB connection and EADDRINUSE safety
 let serverInstance = null;
 
 const startServer = async () => {
@@ -110,40 +161,48 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDB();
 
-    // Start Express listening
-    serverInstance = app.listen(PORT, () => {
-      console.log(`[Destin Cabs Server] Running on http://127.0.0.1:${PORT}`);
-      console.log(`[Destin Cabs Server] Health check available at http://127.0.0.1:${PORT}/api/health`);
+    // Start Express listening on 0.0.0.0
+    await new Promise((resolve, reject) => {
+      serverInstance = app.listen(PORT, HOST, () => {
+        console.log(`[Destin Cabs Server] Running on http://${HOST}:${PORT} (${NODE_ENV})`);
+        console.log(`[Destin Cabs Server] Health check available at /api/health`);
+        resolve(serverInstance);
+      });
+
+      serverInstance.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`\n❌ [Server Error] Port ${PORT} is already in use by another process.`);
+          console.error(`   To free port ${PORT} in PowerShell, run:`);
+          console.error(`   Get-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess | Stop-Process -Force\n`);
+        } else {
+          console.error(`\n❌ [Server Error] ${err.message}\n`);
+        }
+        reject(err);
+      });
     });
 
-    // Handle port in use (EADDRINUSE) and network errors gracefully
-    serverInstance.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.error(`\n❌ [Server Error] Port ${PORT} is already in use by another process.`);
-        console.error(`   To free port ${PORT} in PowerShell, run:`);
-        console.error(`   Get-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess | Stop-Process -Force\n`);
-        process.exit(1);
-      } else {
-        console.error(`\n❌ [Server Error] ${err.message}\n`);
-        process.exit(1);
-      }
-    });
-
+    return serverInstance;
   } catch (error) {
     console.error(`\n❌ [Fatal Startup Error] ${error.message}\n`);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
 // Graceful termination handling
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n[Destin Cabs Server] Gracefully shutting down...');
   if (serverInstance) {
-    serverInstance.close(() => {
-      mongoose.connection.close(false, () => {
+    serverInstance.close(async () => {
+      try {
+        await mongoose.connection.close();
         console.log('[Destin Cabs Server] All connections closed. Process terminating.');
-        process.exit(0);
-      });
+      } catch (e) {
+        // Ignore
+      }
+      process.exit(0);
     });
   } else {
     process.exit(0);

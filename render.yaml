@@ -1,0 +1,19 @@
+# Render Infrastructure-as-Code Configuration
+# Service: Destin Cabs Backend API
+# Company: DESTIN PRIVATE LIMITED
+services:
+  - type: web
+    name: destin-cabs-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
