@@ -7,20 +7,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          darkest: '#051b12',
-          dark: '#0a2e20',
-          forest: '#0f3d2b',
-          emerald: '#16573e',
-          medium: '#1c6f4f',
-          lime: '#a3e635',
-          neon: '#bef264',
-          accent: '#84cc16',
-          light: '#f0fdf4',
-          card: '#ffffff',
-          border: '#86efac',
-          borderDark: '#10b981',
-          textDark: '#062619'
+        destin: {
+          forest: '#003D2F',       // Primary Deep Forest Green from Logo
+          dark: '#004B38',         // Premium Dark Green
+          lime: '#D8EB29',         // Official Lime Yellow Accent
+          limeHover: '#C6D922',    // Interactive Lime Hover
+          soft: '#F5F8F5',         // Soft Luxury Background
+          textDark: '#102B24',     // Dark High-Contrast Text
+          textMuted: '#718078',    // Refined Muted Text
+          border: '#DCE7E0',       // Subtle Border
+          card: '#FFFFFF',
+          forestLight: '#074838',
+          forestDeep: '#002B21'
         }
       },
       fontFamily: {

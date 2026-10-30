@@ -1,5 +1,17 @@
 import React from 'react';
-import { Phone, ShieldCheck, Clock, Award, FileText, PlusCircle, Printer, Download, FolderClock } from 'lucide-react';
+import {
+  Phone,
+  ShieldCheck,
+  Award,
+  Clock,
+  PlusCircle,
+  FolderClock,
+  Printer,
+  Download,
+  Eye,
+  Edit3
+} from 'lucide-react';
+import DestinLogo from './DestinLogo';
 
 const Header = ({
   onNewVoucher,
@@ -7,102 +19,138 @@ const Header = ({
   savedCount = 0,
   onPrint,
   onDownloadPDF,
+  activeView = 'form', // 'form' | 'preview'
+  onToggleView,
   isEditing = false,
   voucherNumber = ''
 }) => {
   return (
-    <header className="no-print bg-[#072418] border-b border-emerald-900/60 sticky top-0 z-40 shadow-lg backdrop-blur-md bg-opacity-95">
+    <header className="no-print bg-[#003D2F] border-b border-[#004B38] sticky top-0 z-40 shadow-lg shadow-black/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
         
-        {/* Brand identity */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-lime-400 via-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-lime-950/40">
-            <span className="font-extrabold text-xl tracking-tighter text-emerald-950">DC</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-white font-display">
-                DESTIN<span className="text-lime-400">.</span>CABS
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-lime-400/20 text-lime-300 border border-lime-400/30">
-                PRO VOUCHER
+        {/* Brand identity with Authentic Vector Logo */}
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <DestinLogo variant="dark" className="h-7 sm:h-8 w-auto" />
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-[#D8EB29]/15 text-[#D8EB29] border border-[#D8EB29]/30">
+                OFFICIAL VOUCHER
               </span>
             </div>
-            <p className="text-[11px] font-semibold tracking-wider text-emerald-300 uppercase">
-              PREMIUM DESTINATION CABS
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] font-bold tracking-wider text-emerald-300 uppercase">
+                DESTIN PRIVATE LIMITED
+              </span>
+              <span className="text-emerald-700 text-xs">•</span>
+              <span className="text-[10px] font-semibold text-emerald-300/80">
+                PREMIUM DESTINATION CABS
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Brand Core Promises & Direct Call Contact */}
-        <div className="hidden lg:flex items-center gap-5 text-xs text-emerald-200/90 font-medium">
+        {/* Corporate Trust Badges & Direct Line */}
+        <div className="hidden xl:flex items-center gap-4 text-xs text-emerald-200/90 font-medium">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-lime-400" />
-            <span>SAFE</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#D8EB29]" />
+            <span className="text-[11px] font-semibold">SAFE</span>
           </div>
           <span className="text-emerald-700">•</span>
           <div className="flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-lime-400" />
-            <span>COMFORTABLE</span>
+            <Award className="w-3.5 h-3.5 text-[#D8EB29]" />
+            <span className="text-[11px] font-semibold">COMFORTABLE</span>
           </div>
           <span className="text-emerald-700">•</span>
           <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-lime-400" />
-            <span>ON TIME</span>
+            <Clock className="w-3.5 h-3.5 text-[#D8EB29]" />
+            <span className="text-[11px] font-semibold">ON TIME</span>
           </div>
-          <div className="h-6 w-px bg-emerald-800 mx-1"></div>
+          <div className="h-5 w-px bg-[#004B38] mx-1"></div>
           <a
             href="tel:+919526886600"
-            className="flex items-center gap-2 bg-emerald-900/60 hover:bg-emerald-800/80 text-lime-300 px-3 py-1.5 rounded-lg border border-emerald-700/60 font-semibold transition-all hover:scale-105"
+            className="flex items-center gap-1.5 bg-[#004B38]/80 hover:bg-[#004B38] text-[#D8EB29] px-2.5 py-1 rounded-lg border border-[#D8EB29]/20 font-semibold text-xs transition-colors"
           >
-            <Phone className="w-3.5 h-3.5 text-lime-400" />
+            <Phone className="w-3 h-3 text-[#D8EB29]" />
             <span>+91 95268 86600</span>
           </a>
         </div>
 
-        {/* Global Action buttons */}
+        {/* Actions & View Modes */}
         <div className="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
+          
+          {/* Mode Switcher: Form vs Preview */}
+          <div className="flex items-center bg-[#002B21] p-0.5 rounded-lg border border-[#004B38]">
+            <button
+              type="button"
+              onClick={() => onToggleView('form')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeView === 'form'
+                  ? 'bg-[#004B38] text-white shadow-sm'
+                  : 'text-emerald-300 hover:text-white'
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5 text-[#D8EB29]" />
+              <span>Form Editor</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleView('preview')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeView === 'preview'
+                  ? 'bg-[#004B38] text-white shadow-sm'
+                  : 'text-emerald-300 hover:text-white'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5 text-[#D8EB29]" />
+              <span>Live Preview</span>
+            </button>
+          </div>
+
+          {/* New Voucher */}
           <button
             type="button"
             onClick={onNewVoucher}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800/60 hover:bg-emerald-700/70 text-emerald-100 text-xs font-semibold border border-emerald-700 transition-all hover:text-white"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#004B38] hover:bg-[#075943] text-emerald-100 text-xs font-semibold border border-emerald-700/60 transition-colors"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-lime-400" />
-            <span>New Voucher</span>
+            <PlusCircle className="w-3.5 h-3.5 text-[#D8EB29]" />
+            <span>New</span>
           </button>
 
+          {/* Saved Vouchers Drawer Button */}
           <button
             type="button"
             onClick={onOpenSaved}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 text-xs font-semibold border border-emerald-700 relative transition-all hover:text-white"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#004B38] hover:bg-[#075943] text-emerald-100 text-xs font-semibold border border-emerald-700/60 transition-colors"
           >
-            <FolderClock className="w-3.5 h-3.5 text-lime-400" />
-            <span>Saved Vouchers</span>
+            <FolderClock className="w-3.5 h-3.5 text-[#D8EB29]" />
+            <span>Saved</span>
             {savedCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 bg-lime-400 text-emerald-950 font-bold text-[10px] rounded-full">
+              <span className="ml-0.5 px-1.5 py-0.2 bg-[#D8EB29] text-[#003D2F] font-bold text-[10px] rounded-full">
                 {savedCount}
               </span>
             )}
           </button>
 
+          {/* Print Action */}
           <button
             type="button"
             onClick={onPrint}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 text-xs font-semibold border border-emerald-700 transition-all hover:text-white"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#004B38] hover:bg-[#075943] text-emerald-100 text-xs font-semibold border border-emerald-700/60 transition-colors"
             title="Print Voucher (Ctrl+P)"
           >
-            <Printer className="w-3.5 h-3.5 text-lime-400" />
+            <Printer className="w-3.5 h-3.5 text-[#D8EB29]" />
             <span className="hidden sm:inline">Print</span>
           </button>
 
+          {/* Download PDF Action */}
           <button
             type="button"
             onClick={onDownloadPDF}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-lime-400 hover:bg-lime-300 text-emerald-950 text-xs font-bold shadow-md shadow-lime-950/20 transition-all hover:scale-105"
-            title="Download A4 PDF"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-[#003D2F] text-xs font-black shadow-md shadow-black/20 transition-transform active:scale-95"
+            title="Download Official A4 PDF"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download PDF</span>
+            <span>PDF</span>
           </button>
         </div>
 

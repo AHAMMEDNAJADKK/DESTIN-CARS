@@ -58,7 +58,7 @@ const SignaturePad = ({ label, value, onChange, disabled = false }) => {
     ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#0a2e20'; // deep emerald ink
+    ctx.strokeStyle = '#003D2F'; // Authentic Deep Forest Green ink
     setIsDrawing(true);
   };
 
@@ -100,8 +100,8 @@ const SignaturePad = ({ label, value, onChange, disabled = false }) => {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
-          <PenTool className="w-3.5 h-3.5 text-emerald-700" />
+        <label className="text-xs font-bold uppercase tracking-wider text-[#003D2F] flex items-center gap-1.5">
+          <PenTool className="w-3.5 h-3.5 text-[#004B38]" />
           {label}
         </label>
         {!isEmpty && !disabled && (
@@ -117,7 +117,7 @@ const SignaturePad = ({ label, value, onChange, disabled = false }) => {
         )}
       </div>
 
-      <div className="relative border-2 border-dashed border-emerald-300 rounded-lg bg-emerald-50/30 overflow-hidden hover:border-emerald-500 transition-colors touch-none">
+      <div className="relative border-2 border-dashed border-[#DCE7E0] rounded-lg bg-[#F5F8F5]/80 overflow-hidden hover:border-[#003D2F]/50 transition-colors touch-none">
         <canvas
           ref={canvasRef}
           width={320}
@@ -132,13 +132,13 @@ const SignaturePad = ({ label, value, onChange, disabled = false }) => {
           onTouchEnd={stopDrawing}
         />
         {isEmpty && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-xs font-medium text-emerald-600/60 italic">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-xs font-medium text-[#718078] italic">
             Draw {label.toLowerCase()} here
           </div>
         )}
       </div>
-      <p className="text-[10px] text-emerald-800/70 mt-1 text-center font-medium">
-        Authorized Signature
+      <p className="text-[10px] text-[#718078] mt-1 text-center font-medium">
+        Authorized Corporate Sign-off
       </p>
     </div>
   );

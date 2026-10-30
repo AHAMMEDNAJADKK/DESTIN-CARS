@@ -6,24 +6,24 @@ const AlertNotification = ({ notification, onClose }) => {
 
   const typeConfig = {
     success: {
-      bg: 'bg-emerald-950 text-white border-emerald-500 shadow-emerald-900/40',
-      icon: <CheckCircle2 className="w-5 h-5 text-lime-400 flex-shrink-0" />,
-      accent: 'bg-lime-400'
+      bg: 'bg-[#003D2F] text-white border-[#D8EB29]/40 shadow-black/20',
+      icon: <CheckCircle2 className="w-5 h-5 text-[#D8EB29] flex-shrink-0" />,
+      titleColor: 'text-[#D8EB29]'
     },
     error: {
       bg: 'bg-rose-950 text-white border-rose-500 shadow-rose-950/40',
       icon: <XCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />,
-      accent: 'bg-rose-500'
+      titleColor: 'text-rose-300'
     },
     warning: {
       bg: 'bg-amber-950 text-white border-amber-500 shadow-amber-950/40',
       icon: <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />,
-      accent: 'bg-amber-400'
+      titleColor: 'text-amber-300'
     },
     info: {
-      bg: 'bg-slate-900 text-white border-emerald-500 shadow-slate-950/40',
-      icon: <Info className="w-5 h-5 text-emerald-400 flex-shrink-0" />,
-      accent: 'bg-emerald-400'
+      bg: 'bg-[#002B21] text-white border-[#004B38] shadow-black/20',
+      icon: <Info className="w-5 h-5 text-emerald-300 flex-shrink-0" />,
+      titleColor: 'text-emerald-300'
     }
   };
 
@@ -31,11 +31,11 @@ const AlertNotification = ({ notification, onClose }) => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 fade-in duration-200 no-print">
-      <div className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl backdrop-blur-md ${current.bg}`}>
+      <div className={`flex items-start gap-3 p-4 rounded-xl border shadow-2xl backdrop-blur-md ${current.bg}`}>
         <div className="mt-0.5">{current.icon}</div>
         <div className="flex-1">
           {notification.title && (
-            <h4 className="font-semibold text-sm tracking-wide text-white mb-0.5">
+            <h4 className={`font-bold text-sm tracking-wide mb-0.5 ${current.titleColor}`}>
               {notification.title}
             </h4>
           )}

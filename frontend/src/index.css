@@ -5,6 +5,8 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #F5F8F5;
+    color: #102B24;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -14,30 +16,30 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #08261b;
+  background: #E8EFEA;
 }
 ::-webkit-scrollbar-thumb {
-  background: #16573e;
+  background: #004B38;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #258c64;
+  background: #003D2F;
 }
 
-/* Print Styles for A4 Portrait Trip Voucher */
+/* Print Styles for Official A4 Portrait Trip Voucher */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm 8mm 8mm 8mm;
+    margin: 6mm;
   }
 
   body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #102B24 !important;
     padding: 0 !important;
     margin: 0 !important;
     -webkit-print-color-adjust: exact !important;
@@ -54,7 +56,7 @@
     box-shadow: none !important;
     max-width: 100% !important;
     width: 100% !important;
-    border: 1px solid #10b981 !important;
+    border: 1.5px solid #003D2F !important;
     page-break-inside: avoid;
   }
 
@@ -63,10 +65,9 @@
     background: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
-    color: #000000 !important;
+    color: #102B24 !important;
   }
 
-  /* Keep table borders and backgrounds crisp */
   .print-exact {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

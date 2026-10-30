@@ -1,6 +1,13 @@
 /**
  * Calculation and validation utilities for Destin Cabs Voucher System
+ * Uses safe integer arithmetic (paise) to prevent floating-point rounding errors.
  */
+
+// Helper to convert rupees to integer paise
+const toPaise = (amount) => Math.round((parseFloat(amount) || 0) * 100);
+
+// Helper to convert integer paise back to rupees
+const toRupees = (paise) => Math.round(paise) / 100;
 
 const calculateTotalKM = (startingKM, closingKM) => {
   if (
@@ -32,7 +39,10 @@ const calculateTotalAmount = (taxiCharges = 0, tollParking = 0, nightBata = 0) =
   if (taxi < 0 || toll < 0 || bata < 0) {
     throw new Error('Charge amounts cannot be negative');
   }
-  return Math.round((taxi + toll + bata) * 100) / 100;
+
+  // Safe integer arithmetic in paise
+  const totalPaise = toPaise(taxi) + toPaise(toll) + toPaise(bata);
+  return toRupees(totalPaise);
 };
 
 const calculateBalance = (totalAmount, advance = 0) => {
@@ -42,11 +52,13 @@ const calculateBalance = (totalAmount, advance = 0) => {
   if (adv < 0) {
     throw new Error('Advance amount cannot be negative');
   }
-  return Math.round((total - adv) * 100) / 100;
+
+  const balancePaise = toPaise(total) - toPaise(adv);
+  return toRupees(balancePaise);
 };
 
 const calculateDuration = (fromTime, toTime) => {
-  if (!fromTime || !toTime) return { formatted: '', totalMinutes: 0 };
+  if (!fromTime || !toTime) return { formatted: '', hours: 0, minutes: 0, totalMinutes: 0 };
 
   const [fromH, fromM] = fromTime.split(':').map(Number);
   const [toH, toM] = toTime.split(':').map(Number);
@@ -92,7 +104,6 @@ const calculateDuration = (fromTime, toTime) => {
 const isValidIndianPhone = (phone) => {
   if (!phone) return false;
   const cleanPhone = phone.toString().replace(/[\s\-\(\)]/g, '');
-  // Matches +91 followed by 10 digits starting with 6-9, or bare 10 digits starting with 6-9
   return /^(\+91)?[6-9]\d{9}$/.test(cleanPhone);
 };
 
@@ -101,5 +112,7 @@ module.exports = {
   calculateTotalAmount,
   calculateBalance,
   calculateDuration,
-  isValidIndianPhone
+  isValidIndianPhone,
+  toPaise,
+  toRupees
 };

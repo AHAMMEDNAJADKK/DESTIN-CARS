@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import TripVoucherForm from './components/TripVoucherForm';
+import VoucherPreview from './components/VoucherPreview';
 import SavedVouchersModal from './components/SavedVouchersModal';
 import AlertNotification from './components/AlertNotification';
 import {
@@ -53,6 +54,8 @@ function App() {
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [activeView, setActiveView] = useState('form'); // 'form' | 'preview'
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Saved vouchers drawer state
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
@@ -61,9 +64,9 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
-  const voucherCardRef = useRef(null);
+  const printablePreviewRef = useRef(null);
 
-  // Show notification helper
+  // Show notification toast
   const notify = (type, title, message) => {
     setNotification({ type, title, message });
     setTimeout(() => {
@@ -71,7 +74,7 @@ function App() {
     }, 6000);
   };
 
-  // Initialize new voucher number on load
+  // Initialize new sequential voucher number
   const loadNextVoucherNumber = useCallback(async () => {
     try {
       const nextNumber = await fetchNextVoucherNumber();
@@ -80,6 +83,7 @@ function App() {
         voucherNumber: nextNumber,
         date: formatDateInput()
       }));
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error(err);
     }
@@ -98,21 +102,22 @@ function App() {
     }
   }, [searchTerm, dateFilter]);
 
-  // Initial load
+  // Initial mount
   useEffect(() => {
     loadNextVoucherNumber();
     loadSavedVouchers();
   }, [loadNextVoucherNumber, loadSavedVouchers]);
 
-  // Refresh saved vouchers when modal opens or filters change
+  // Refresh saved vouchers when modal opens or filter changes
   useEffect(() => {
     if (isSavedModalOpen) {
       loadSavedVouchers(searchTerm, dateFilter);
     }
   }, [isSavedModalOpen, searchTerm, dateFilter, loadSavedVouchers]);
 
-  // Handle field change and run real-time dependent calculations
+  // Handle field change with safe real-time dependent calculations
   const handleFieldChange = (field, value) => {
+    setHasUnsavedChanges(true);
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
 
@@ -251,7 +256,7 @@ function App() {
   // Save / Update Voucher
   const handleSaveVoucher = async () => {
     if (!validateForm()) {
-      notify('error', 'Validation Error', 'Please check the highlighted fields before saving.');
+      notify('error', 'Validation Check', 'Please fill in all required fields marked with * before saving.');
       return;
     }
 
@@ -268,29 +273,32 @@ function App() {
       };
 
       if (editingId) {
-        // Update
         const updated = await updateVoucher(editingId, payload);
-        notify('success', 'Voucher Updated', `Trip Voucher ${payload.voucherNumber} updated successfully.`);
+        notify('success', 'Voucher Updated', `Trip Voucher ${payload.voucherNumber} successfully updated.`);
         setFormData(updated.data);
       } else {
-        // Create new
         const created = await createVoucher(payload);
-        notify('success', 'Voucher Created', `Trip Voucher ${payload.voucherNumber} created and saved.`);
+        notify('success', 'Voucher Saved', `Trip Voucher ${payload.voucherNumber} created and saved in MongoDB.`);
         setFormData(created.data);
         setEditingId(created.data._id);
       }
 
+      setHasUnsavedChanges(false);
       loadSavedVouchers();
     } catch (err) {
       console.error(err);
-      notify('error', 'Save Failed', err.message || 'Could not save voucher. Please check database connection.');
+      notify('error', 'Save Error', err.message || 'Could not save voucher to MongoDB.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Reset form to blank / new voucher
+  // Reset form to create a new voucher
   const handleResetForm = async () => {
+    if (hasUnsavedChanges) {
+      const confirmDiscard = window.confirm('You have unsaved changes on this voucher. Discard and create new?');
+      if (!confirmDiscard) return;
+    }
     setEditingId(null);
     setErrors({});
     const nextNumber = await fetchNextVoucherNumber();
@@ -299,7 +307,9 @@ function App() {
       voucherNumber: nextNumber,
       date: formatDateInput()
     });
-    notify('info', 'New Voucher Form Ready', 'Form reset with new sequential voucher number.');
+    setHasUnsavedChanges(false);
+    setActiveView('form');
+    notify('info', 'New Voucher Form Ready', 'Form initialized with next sequential voucher number.');
   };
 
   // Select voucher from saved list to edit
@@ -316,15 +326,17 @@ function App() {
       advance: voucher.advance !== undefined ? voucher.advance : ''
     });
     setErrors({});
+    setHasUnsavedChanges(false);
     setIsSavedModalOpen(false);
-    notify('info', 'Voucher Loaded', `Loaded voucher ${voucher.voucherNumber} into editor.`);
+    setActiveView('form');
+    notify('info', 'Voucher Loaded', `Voucher ${voucher.voucherNumber} loaded for editing.`);
   };
 
   // Delete voucher
   const handleDeleteVoucher = async (id) => {
     try {
       await deleteVoucher(id);
-      notify('success', 'Voucher Deleted', 'The voucher was deleted successfully.');
+      notify('success', 'Voucher Deleted', 'The voucher was permanently removed.');
       loadSavedVouchers();
       if (editingId === id) {
         handleResetForm();
@@ -341,45 +353,88 @@ function App() {
 
   // Download high-resolution PDF
   const handleDownloadPDF = async () => {
-    if (!voucherCardRef.current) return;
+    if (!printablePreviewRef.current) return;
     try {
-      notify('info', 'Generating PDF', 'Rendering high-resolution A4 voucher PDF...');
-      await generateVoucherPDF(voucherCardRef.current, formData.voucherNumber);
-      notify('success', 'PDF Downloaded', `Voucher ${formData.voucherNumber} saved successfully.`);
+      notify('info', 'Rendering PDF', 'Generating high-resolution official A4 voucher...');
+      await generateVoucherPDF(printablePreviewRef.current, formData.voucherNumber);
+      notify('success', 'PDF Ready', `Voucher ${formData.voucherNumber} exported successfully.`);
     } catch (err) {
       console.error(err);
-      notify('error', 'PDF Error', err.message || 'Failed to generate PDF');
+      notify('error', 'PDF Error', err.message || 'Failed to generate PDF document');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#061e15] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F5F8F5] text-[#102B24] flex flex-col font-sans">
       
-      {/* Top Application Header */}
+      {/* Top Corporate Header */}
       <Header
         onNewVoucher={handleResetForm}
         onOpenSaved={() => setIsSavedModalOpen(true)}
         savedCount={savedVouchers.length}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
+        activeView={activeView}
+        onToggleView={setActiveView}
         isEditing={Boolean(editingId)}
         voucherNumber={formData.voucherNumber}
       />
 
-      {/* Main Content Area */}
+      {/* Main Working View */}
       <main className="flex-1 pb-16">
-        <TripVoucherForm
-          formData={formData}
-          errors={errors}
-          onChange={handleFieldChange}
-          onSave={handleSaveVoucher}
-          onPrint={handlePrint}
-          onDownloadPDF={handleDownloadPDF}
-          onReset={handleResetForm}
-          isEditing={Boolean(editingId)}
-          isSaving={isSaving}
-          voucherCardRef={voucherCardRef}
-        />
+        {activeView === 'form' ? (
+          <TripVoucherForm
+            formData={formData}
+            errors={errors}
+            onChange={handleFieldChange}
+            onSave={handleSaveVoucher}
+            onPrint={handlePrint}
+            onDownloadPDF={handleDownloadPDF}
+            onReset={handleResetForm}
+            onPreview={() => setActiveView('preview')}
+            isEditing={Boolean(editingId)}
+            isSaving={isSaving}
+            hasUnsavedChanges={hasUnsavedChanges}
+          />
+        ) : (
+          <div className="max-w-4xl mx-auto my-6 px-3 sm:px-6">
+            <div className="no-print mb-4 flex items-center justify-between bg-white p-3.5 rounded-xl border border-[#DCE7E0] shadow-sm">
+              <span className="text-xs font-semibold text-[#003D2F]">
+                Viewing Live Official Voucher Document: <strong>{formData.voucherNumber}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('form')}
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-[#102B24] transition-colors"
+                >
+                  Back to Form
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-[#DCE7E0] hover:bg-slate-50 text-xs font-semibold text-[#003D2F] transition-colors"
+                >
+                  Print
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadPDF}
+                  className="px-3 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-xs font-black text-[#003D2F] transition-colors"
+                >
+                  Download PDF
+                </button>
+              </div>
+            </div>
+
+            <VoucherPreview formData={formData} />
+          </div>
+        )}
+
+        {/* Hidden / Always-ready Preview Anchor for High-Res PDF capture & Native Print */}
+        <div className="hidden print:block fixed -left-[9999px] top-0 print:static print:left-auto">
+          <VoucherPreview formData={formData} previewRef={printablePreviewRef} />
+        </div>
       </main>
 
       {/* Saved Vouchers Modal Drawer */}
@@ -405,7 +460,7 @@ function App() {
         onDateChange={setDateFilter}
       />
 
-      {/* Toast Notification */}
+      {/* Floating Alert Notification Toast */}
       <AlertNotification
         notification={notification}
         onClose={() => setNotification(null)}

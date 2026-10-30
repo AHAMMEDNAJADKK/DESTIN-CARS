@@ -1,5 +1,5 @@
 /**
- * Currency and Date formatters for Destin Cabs
+ * Professional Indian Currency and Date formatters for Destin Cabs
  */
 
 export const formatCurrency = (amount) => {
