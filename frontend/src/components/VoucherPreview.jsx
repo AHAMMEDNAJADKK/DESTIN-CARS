@@ -9,7 +9,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Award,
-  Hash
+  Hash,
+  Building2
 } from 'lucide-react';
 import DestinLogo from './DestinLogo';
 import { formatCurrency, formatDateDisplay } from '../utils/formatters';
@@ -22,45 +23,45 @@ const VoucherPreview = ({ formData, previewRef }) => {
         className="voucher-container bg-white w-full max-w-4xl shadow-xl rounded-xl border border-[#DCE7E0] overflow-hidden text-[#102B24] print:shadow-none print:border-2 print:border-[#003D2F] print:rounded-none"
       >
         {/* ============================================================== */}
-        {/* HEADER: Official Logo, Legal Company Name & Contact           */}
+        {/* HEADER: Official Logo, Legal Company Name & Registered Address */}
         {/* ============================================================== */}
-        <div className="bg-[#003D2F] text-white p-6 border-b-4 border-[#D8EB29] print-exact">
+        <div className="bg-[#003D2F] text-white p-5 sm:p-6 border-b-4 border-[#D8EB29] print-exact">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             
             {/* Authentic Brand Asset & Legal Details */}
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-2 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm shrink-0">
                 <DestinLogo variant="dark" className="h-8 sm:h-9 w-auto" />
               </div>
               <div>
-                <div className="text-[11px] font-extrabold tracking-widest text-[#D8EB29] uppercase">
+                <div className="text-xs font-black tracking-widest text-[#D8EB29] uppercase">
                   DESTIN PRIVATE LIMITED
                 </div>
-                <div className="text-xs font-semibold text-emerald-200 tracking-wider uppercase mt-0.5">
-                  PREMIUM DESTINATION CABS
+                <div className="text-[11px] font-semibold text-emerald-200 tracking-wider uppercase mt-0.5">
+                  DESTIN CABS • PREMIUM DESTINATION MOBILITY
                 </div>
-                <div className="flex items-center gap-3 text-[10px] text-emerald-300 mt-1 font-semibold tracking-wider">
-                  <span>SAFE</span>
-                  <span>•</span>
-                  <span>COMFORTABLE</span>
-                  <span>•</span>
-                  <span>ON TIME</span>
-                </div>
+                <p className="text-[10px] text-emerald-300/90 leading-tight mt-1 max-w-md">
+                  Suite No.1067, 2nd, Kc Arcade, 24/1701, near TV Centre, P.O, CSEZ, Kakkanad, Kochi, Keralam 682037
+                </p>
               </div>
             </div>
 
             {/* Document Title & Contact */}
-            <div className="text-left sm:text-right flex flex-col sm:items-end">
-              <div className="inline-block bg-[#D8EB29] text-[#003D2F] px-4 py-1 rounded font-black text-base sm:text-lg tracking-wider uppercase shadow-sm">
+            <div className="text-left sm:text-right flex flex-col sm:items-end shrink-0">
+              <div className="inline-block bg-[#D8EB29] text-[#003D2F] px-3.5 py-1 rounded font-black text-sm sm:text-base tracking-wider uppercase shadow-sm">
                 TRIP VOUCHER
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-xs text-[#D8EB29] font-bold">
                 <Phone className="w-3.5 h-3.5 text-[#D8EB29]" />
                 <span>+91 95268 86600</span>
               </div>
-              <p className="text-[10px] text-emerald-300/90 mt-0.5 font-medium">
-                Official Passenger & Travel Receipt
-              </p>
+              <div className="flex items-center gap-2 text-[9px] text-emerald-300 font-semibold tracking-wider mt-0.5">
+                <span>SAFE</span>
+                <span>•</span>
+                <span>COMFORTABLE</span>
+                <span>•</span>
+                <span>ON TIME</span>
+              </div>
             </div>
 
           </div>
@@ -105,7 +106,7 @@ const VoucherPreview = ({ formData, previewRef }) => {
             {/* Driver Name & Phone */}
             <div className="bg-white p-2.5 rounded-lg border border-[#DCE7E0]">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#718078] block">
-                Driver Details
+                Driver Name & Contact
               </span>
               <span className="text-sm font-semibold text-[#102B24] block mt-0.5 truncate">
                 {formData.driverName || '—'}
@@ -135,7 +136,7 @@ const VoucherPreview = ({ formData, previewRef }) => {
                 <span className="text-[10px] text-[#718078] font-medium">Passenger Information</span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <div>
                   <span className="text-[10px] font-semibold uppercase text-[#718078] block">Passenger Name</span>
                   <p className="text-sm font-bold text-[#102B24]">{formData.customerName || '—'}</p>
@@ -147,8 +148,8 @@ const VoucherPreview = ({ formData, previewRef }) => {
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-semibold uppercase text-[#718078] block">Billing / Address</span>
-                  <p className="text-xs text-[#102B24] whitespace-pre-wrap leading-relaxed">
+                  <span className="text-[10px] font-semibold uppercase text-[#718078] block">Billing / Destination Address</span>
+                  <p className="text-xs text-[#102B24] whitespace-pre-wrap leading-relaxed break-words">
                     {formData.customerAddress || 'Direct Passenger Dispatch'}
                   </p>
                 </div>
@@ -291,7 +292,7 @@ const VoucherPreview = ({ formData, previewRef }) => {
             {/* Guest Signature */}
             <div className="bg-white border border-[#DCE7E0] rounded-xl p-3 text-center">
               <div className="h-20 flex items-center justify-center">
-                {formData.guestSignature ? (
+                {formData.guestSignature && formData.guestSignature.length > 50 && formData.guestSignature.startsWith('data:image/') ? (
                   <img
                     src={formData.guestSignature}
                     alt="Guest Signature"
@@ -311,7 +312,7 @@ const VoucherPreview = ({ formData, previewRef }) => {
             {/* Driver Signature */}
             <div className="bg-white border border-[#DCE7E0] rounded-xl p-3 text-center">
               <div className="h-20 flex items-center justify-center">
-                {formData.driverSignature ? (
+                {formData.driverSignature && formData.driverSignature.length > 50 && formData.driverSignature.startsWith('data:image/') ? (
                   <img
                     src={formData.driverSignature}
                     alt="Driver Signature"
@@ -332,19 +333,22 @@ const VoucherPreview = ({ formData, previewRef }) => {
         </div>
 
         {/* ============================================================== */}
-        {/* CORPORATE FOOTER                                               */}
+        {/* CORPORATE FOOTER WITH OFFICIAL REGISTERED ADDRESS              */}
         {/* ============================================================== */}
-        <div className="bg-[#002B21] text-emerald-200 px-6 py-4 border-t border-[#003D2F] flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-2 print-exact">
-          <div>
+        <div className="bg-[#002B21] text-emerald-200 px-6 py-4 border-t border-[#003D2F] flex flex-col sm:flex-row items-start sm:items-center justify-between text-left gap-3 print-exact">
+          <div className="space-y-0.5">
             <div className="text-[11px] font-bold text-white tracking-wide">
               DESTIN CABS • A Division of DESTIN PRIVATE LIMITED
             </div>
-            <div className="text-[9px] text-emerald-400 mt-0.5">
-              Direct Contact: +91 95268 86600 • Premium Destination Mobility
+            <p className="text-[9px] text-emerald-300/90 leading-relaxed max-w-xl">
+              Registered Office: Suite No.1067, 2nd, Kc Arcade, 24/1701, near TV Centre, P.O, CSEZ, Kakkanad, Kochi, Keralam 682037
+            </p>
+            <div className="text-[9px] text-[#D8EB29] font-medium">
+              Direct Contact: +91 95268 86600 • Safe, Comfortable & On-Time Transportation
             </div>
           </div>
-          <div className="text-[10px] font-bold text-[#D8EB29] tracking-wider uppercase">
-            SAFE • COMFORTABLE • ON TIME
+          <div className="text-[10px] font-bold text-[#D8EB29] tracking-wider uppercase shrink-0">
+            OFFICIAL RECEIPT
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import {
   Save,
   Printer,
   Download,
+  Loader2,
   RotateCcw,
   Navigation,
   FileText,
@@ -30,7 +31,8 @@ const TripVoucherForm = ({
   onPreview,
   isEditing = false,
   isSaving = false,
-  hasUnsavedChanges = false
+  hasUnsavedChanges = false,
+  isGeneratingPDF = false
 }) => {
   const handleChange = (field, value) => {
     onChange(field, value);
@@ -646,11 +648,16 @@ const TripVoucherForm = ({
             <button
               type="button"
               onClick={onDownloadPDF}
-              className="px-3.5 py-2 rounded-xl bg-[#004B38] hover:bg-[#003D2F] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+              disabled={isGeneratingPDF}
+              className="px-3.5 py-2 rounded-xl bg-[#004B38] hover:bg-[#003D2F] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               title="Download PDF"
             >
-              <Download className="w-3.5 h-3.5 text-[#D8EB29]" />
-              <span>PDF</span>
+              {isGeneratingPDF ? (
+                <Loader2 className="w-3.5 h-3.5 text-[#D8EB29] animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-[#D8EB29]" />
+              )}
+              <span>{isGeneratingPDF ? 'Generating...' : 'PDF'}</span>
             </button>
 
             <button

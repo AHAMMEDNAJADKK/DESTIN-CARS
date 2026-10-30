@@ -230,7 +230,7 @@ const SavedVouchersModal = ({
                     </button>
 
                     <button
-                      onClick={() => onDownloadVoucherPDF(voucher)}
+                      onClick={() => (onDownloadVoucherPDF || onDownloadPDFVoucher)?.(voucher)}
                       className="p-1.5 rounded-lg bg-[#D8EB29]/20 hover:bg-[#D8EB29]/40 text-[#003D2F] border border-[#D8EB29]/40 transition-colors"
                       title="Download PDF"
                     >

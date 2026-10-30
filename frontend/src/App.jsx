@@ -20,6 +20,8 @@ import {
 } from './utils/calculations';
 import { formatDateInput } from './utils/formatters';
 import { generateVoucherPDF, printVoucher } from './utils/pdfGenerator';
+import DestinLogo from './components/DestinLogo';
+import { Loader2, Download } from 'lucide-react';
 
 const initialFormState = {
   voucherNumber: '',
@@ -53,6 +55,7 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [notification, setNotification] = useState(null);
   const [activeView, setActiveView] = useState('form'); // 'form' | 'preview'
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -353,14 +356,28 @@ function App() {
 
   // Download high-resolution PDF
   const handleDownloadPDF = async () => {
-    if (!printablePreviewRef.current) return;
+    if (isGeneratingPDF) return;
+
+    // Use dedicated offscreen preview, or fallback to any mounted voucher preview in DOM
+    const targetElement =
+      printablePreviewRef.current || document.querySelector('.voucher-container');
+
+    if (!targetElement) {
+      notify('error', 'PDF Error', 'Voucher document preview is not ready for export.');
+      return;
+    }
+
     try {
-      notify('info', 'Rendering PDF', 'Generating high-resolution official A4 voucher...');
-      await generateVoucherPDF(printablePreviewRef.current, formData.voucherNumber);
-      notify('success', 'PDF Ready', `Voucher ${formData.voucherNumber} exported successfully.`);
+      setIsGeneratingPDF(true);
+      notify('info', 'Rendering PDF', 'Generating high-resolution official A4 trip voucher...');
+      const voucherNum = formData.voucherNumber || 'DRAFT';
+      await generateVoucherPDF(targetElement, voucherNum);
+      notify('success', 'PDF Ready', `Voucher ${voucherNum} exported successfully.`);
     } catch (err) {
-      console.error(err);
+      console.error('[App PDF Download Error]', err);
       notify('error', 'PDF Error', err.message || 'Failed to generate PDF document');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -378,24 +395,28 @@ function App() {
         onToggleView={setActiveView}
         isEditing={Boolean(editingId)}
         voucherNumber={formData.voucherNumber}
+        isGeneratingPDF={isGeneratingPDF}
       />
 
       {/* Main Working View */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-12">
         {activeView === 'form' ? (
-          <TripVoucherForm
-            formData={formData}
-            errors={errors}
-            onChange={handleFieldChange}
-            onSave={handleSaveVoucher}
-            onPrint={handlePrint}
-            onDownloadPDF={handleDownloadPDF}
-            onReset={handleResetForm}
-            onPreview={() => setActiveView('preview')}
-            isEditing={Boolean(editingId)}
-            isSaving={isSaving}
-            hasUnsavedChanges={hasUnsavedChanges}
-          />
+          <div className="no-print">
+            <TripVoucherForm
+              formData={formData}
+              errors={errors}
+              onChange={handleFieldChange}
+              onSave={handleSaveVoucher}
+              onPrint={handlePrint}
+              onDownloadPDF={handleDownloadPDF}
+              onReset={handleResetForm}
+              onPreview={() => setActiveView('preview')}
+              isEditing={Boolean(editingId)}
+              isSaving={isSaving}
+              hasUnsavedChanges={hasUnsavedChanges}
+              isGeneratingPDF={isGeneratingPDF}
+            />
+          </div>
         ) : (
           <div className="max-w-4xl mx-auto my-6 px-3 sm:px-6">
             <div className="no-print mb-4 flex items-center justify-between bg-white p-3.5 rounded-xl border border-[#DCE7E0] shadow-sm">
@@ -420,9 +441,15 @@ function App() {
                 <button
                   type="button"
                   onClick={handleDownloadPDF}
-                  className="px-3 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-xs font-black text-[#003D2F] transition-colors"
+                  disabled={isGeneratingPDF}
+                  className="px-3 py-1.5 rounded-lg bg-[#D8EB29] hover:bg-[#C6D922] text-xs font-black text-[#003D2F] transition-colors flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Download PDF
+                  {isGeneratingPDF ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#003D2F]" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isGeneratingPDF ? 'Generating...' : 'Download PDF'}</span>
                 </button>
               </div>
             </div>
@@ -431,11 +458,44 @@ function App() {
           </div>
         )}
 
-        {/* Hidden / Always-ready Preview Anchor for High-Res PDF capture & Native Print */}
-        <div className="hidden print:block fixed -left-[9999px] top-0 print:static print:left-auto">
+        {/* Dedicated Off-Screen A4 Container for High-Res PDF capture & Native Print */}
+        <div
+          className="fixed -left-[9999px] top-0 print:static print:left-auto"
+          style={{
+            width: '800px',
+            minWidth: '800px',
+            maxWidth: '800px',
+            visibility: 'visible',
+            pointerEvents: 'none',
+            zIndex: -9999
+          }}
+          aria-hidden="true"
+        >
           <VoucherPreview formData={formData} previewRef={printablePreviewRef} />
         </div>
       </main>
+
+      {/* Minimal Professional Page Footer */}
+      <footer className="no-print bg-white border-t border-[#DCE7E0] py-6 px-4 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <DestinLogo variant="light" className="h-5 w-auto" />
+            <div className="text-xs">
+              <span className="font-bold text-[#003D2F]">DESTIN CABS</span>
+              <span className="text-[#718078] mx-1.5">•</span>
+              <span className="font-semibold text-[#102B24]">DESTIN PRIVATE LIMITED</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-[#718078] max-w-xl leading-relaxed">
+            Suite No.1067, 2nd, Kc Arcade, 24/1701, near TV Centre, P.O, CSEZ, Kakkanad, Kochi, Keralam 682037
+          </p>
+
+          <div className="text-[11px] text-[#718078] font-medium shrink-0">
+            Helpline: <a href="tel:+919526886600" className="text-[#003D2F] font-bold hover:underline">+91 95268 86600</a>
+          </div>
+        </div>
+      </footer>
 
       {/* Saved Vouchers Modal Drawer */}
       <SavedVouchersModal
