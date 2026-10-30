@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #08261b;
+}
+::-webkit-scrollbar-thumb {
+  background: #16573e;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #258c64;
+}
+
+/* Print Styles for A4 Portrait Trip Voucher */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .voucher-container {
+    padding: 0 !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border: 1px solid #10b981 !important;
+    page-break-inside: avoid;
+  }
+
+  input, textarea {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    color: #000000 !important;
+  }
+
+  /* Keep table borders and backgrounds crisp */
+  .print-exact {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
