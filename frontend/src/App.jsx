@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import Header from './components/Header';
 import TripVoucherForm from './components/TripVoucherForm';
 import VoucherPreview from './components/VoucherPreview';
@@ -379,17 +380,36 @@ function App() {
 
   // Print voucher using the dedicated TripVoucherPrint component
   const handlePrint = (voucherData = null) => {
-    const targetVoucher = voucherData || formData;
-    setPrintVoucherData(targetVoucher);
-    // Allow state to flush before opening native print dialog
-    setTimeout(() => {
-      window.print();
-    }, 80);
+    // If voucherData is a React synthetic event (from onClick={handlePrint}) or non-voucher, use formData
+    const isVoucherObject = voucherData && typeof voucherData === 'object' && ('voucherNumber' in voucherData || 'vehicleNumber' in voucherData);
+    const targetVoucher = isVoucherObject ? voucherData : formData;
+
+    // Flush state update synchronously so TripVoucherPrint DOM is rendered before print dialog
+    flushSync(() => {
+      setPrintVoucherData(targetVoucher);
+    });
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.print();
+      }, 40);
+    });
   };
 
   // Download high-resolution PDF
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = async (voucherData = null) => {
     if (isGeneratingPDF) return;
+
+    // If a specific voucher object is provided (e.g. from Saved Vouchers modal), update formData
+    const isVoucherObject = voucherData && typeof voucherData === 'object' && ('voucherNumber' in voucherData || 'vehicleNumber' in voucherData);
+    if (isVoucherObject) {
+      flushSync(() => {
+        setFormData((prev) => ({
+          ...prev,
+          ...voucherData
+        }));
+      });
+    }
 
     // Use dedicated offscreen preview, or fallback to any mounted voucher preview in DOM
     const targetElement =
@@ -403,7 +423,7 @@ function App() {
     try {
       setIsGeneratingPDF(true);
       notify('info', 'Rendering PDF', 'Generating high-resolution official A4 trip voucher...');
-      const voucherNum = formData.voucherNumber || 'DRAFT';
+      const voucherNum = (isVoucherObject ? voucherData.voucherNumber : formData.voucherNumber) || 'DRAFT';
       await generateVoucherPDF(targetElement, voucherNum);
       notify('success', 'PDF Ready', `Voucher ${voucherNum} exported successfully.`);
     } catch (err) {
@@ -415,7 +435,26 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F8F5] text-[#102B24] flex flex-col font-sans">
+    <>
+      {/* Dedicated Off-Screen Container for High-Res PDF capture (placed outside no-print) */}
+      <div
+        className="pdf-capture-container"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '800px',
+          minWidth: '800px',
+          maxWidth: '800px',
+          zIndex: -9999,
+          pointerEvents: 'none'
+        }}
+        aria-hidden="true"
+      >
+        <VoucherPreview formData={formData} previewRef={printablePreviewRef} />
+      </div>
+
+      <div className="no-print min-h-screen bg-[#F5F8F5] text-[#102B24] flex flex-col font-sans">
       
       {/* Top Corporate Header */}
       <Header
@@ -513,22 +552,6 @@ function App() {
             <VoucherPreview formData={formData} />
           </div>
         )}
-
-        {/* Dedicated Off-Screen A4 Container for High-Res PDF capture & Native Print */}
-        <div
-          className="fixed -left-[9999px] top-0 print:static print:left-auto"
-          style={{
-            width: '800px',
-            minWidth: '800px',
-            maxWidth: '800px',
-            visibility: 'visible',
-            pointerEvents: 'none',
-            zIndex: -9999
-          }}
-          aria-hidden="true"
-        >
-          <VoucherPreview formData={formData} previewRef={printablePreviewRef} />
-        </div>
       </main>
 
       {/* Minimal Professional Page Footer */}
@@ -562,8 +585,7 @@ function App() {
           handlePrint(voucher);
         }}
         onDownloadVoucherPDF={(voucher) => {
-          handleSelectVoucherToEdit(voucher);
-          setTimeout(() => handleDownloadPDF(), 400);
+          handleDownloadPDF(voucher);
         }}
         onDeleteVoucher={handleDeleteVoucher}
         vouchers={savedVouchers}
@@ -581,12 +603,13 @@ function App() {
         onClose={() => setNotification(null)}
       />
 
-      {/* Dedicated Print-Only Voucher Document (Hidden on screen, exclusively visible during browser print) */}
-      <div className="trip-voucher-print-wrapper" aria-hidden="true">
-        <TripVoucherPrint voucher={printVoucherData || formData} />
       </div>
 
-    </div>
+      {/* Dedicated Print-Only Voucher Document (Hidden on screen, exclusively visible during browser print) */}
+      <div className="trip-voucher-print-wrapper">
+        <TripVoucherPrint voucher={printVoucherData || formData} />
+      </div>
+    </>
   );
 }
 
