@@ -1,6 +1,6 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { preloadAllContainerImages, convertToSafeDataUrl, isValidDataUrl } from './imageProcessor';
+import { preloadAllContainerImages, isValidDataUrl } from './imageProcessor';
 
 /**
  * Generates and downloads an official Destin Cabs corporate A4 portrait PDF trip voucher.
@@ -28,13 +28,17 @@ export const generateVoucherPDF = async (element, voucherNumber = 'VOUCHER') => 
       visibility: element.style.visibility,
       position: element.style.position,
       left: element.style.left,
-      width: element.style.width
+      top: element.style.top,
+      width: element.style.width,
+      zIndex: element.style.zIndex
     };
     element.style.display = 'block';
     element.style.visibility = 'visible';
     element.style.position = 'fixed';
-    element.style.left = '-9999px';
+    element.style.left = '0px';
+    element.style.top = '0px';
     element.style.width = '800px';
+    element.style.zIndex = '-9999';
   }
 
   try {
@@ -53,8 +57,8 @@ export const generateVoucherPDF = async (element, voucherNumber = 'VOUCHER') => 
     // Give browser a microtask tick to complete any pending layout recalculations
     await new Promise((res) => setTimeout(res, 50));
 
-    const elementWidth = element.offsetWidth || 800;
-    const elementHeight = element.offsetHeight || 1120;
+    const elementWidth = 800;
+    const elementHeight = element.scrollHeight || element.offsetHeight || 1120;
 
     // 3. High-resolution canvas capture via html2canvas
     const canvas = await html2canvas(element, {
@@ -63,35 +67,41 @@ export const generateVoucherPDF = async (element, voucherNumber = 'VOUCHER') => 
       allowTaint: true,
       logging: false,
       backgroundColor: '#ffffff',
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0,
       width: elementWidth,
       height: elementHeight,
-      windowWidth: elementWidth,
-      windowHeight: elementHeight,
+      windowWidth: 800,
       onclone: (clonedDoc, clonedElement) => {
-        // Ensure cloned element is visible and properly sized
         if (clonedElement) {
+          // Isolate clonedElement into a dedicated wrapper at top-left of clonedDoc
+          const isolatedContainer = clonedDoc.createElement('div');
+          isolatedContainer.style.position = 'absolute';
+          isolatedContainer.style.top = '0';
+          isolatedContainer.style.left = '0';
+          isolatedContainer.style.width = '800px';
+          isolatedContainer.style.backgroundColor = '#ffffff';
+          isolatedContainer.style.zIndex = '999999';
+          isolatedContainer.style.margin = '0';
+          isolatedContainer.style.padding = '0';
+
+          // Reset positioning and styles on cloned element
           clonedElement.style.display = 'block';
           clonedElement.style.visibility = 'visible';
-          clonedElement.style.width = `${elementWidth}px`;
+          clonedElement.style.position = 'relative';
+          clonedElement.style.left = '0';
+          clonedElement.style.top = '0';
+          clonedElement.style.width = '800px';
+          clonedElement.style.maxWidth = '800px';
+          clonedElement.style.minWidth = '800px';
           clonedElement.style.margin = '0 auto';
-        }
+          clonedElement.style.boxShadow = 'none';
+          clonedElement.style.borderRadius = '0px';
 
-        // Hide no-print elements in cloned document
-        const noPrints = clonedDoc.querySelectorAll('.no-print');
-        noPrints.forEach((el) => el.style.setProperty('display', 'none', 'important'));
+          // Hide action buttons inside clonedElement
+          const innerNoPrints = clonedElement.querySelectorAll('button, .no-print');
+          innerNoPrints.forEach((el) => el.style.setProperty('display', 'none', 'important'));
 
-        // Reset shadows and borders for crisp print
-        const voucher = clonedDoc.querySelector('.voucher-container');
-        if (voucher) {
-          voucher.style.boxShadow = 'none';
-          voucher.style.borderRadius = '0px';
-          voucher.style.margin = '0 auto';
-          voucher.style.width = '100%';
-          voucher.style.maxWidth = '100%';
+          isolatedContainer.appendChild(clonedElement);
+          clonedDoc.body.appendChild(isolatedContainer);
         }
       }
     });
@@ -147,7 +157,7 @@ export const generateVoucherPDF = async (element, voucherNumber = 'VOUCHER') => 
       console.warn('[PDF Generator] Tier 1 PNG embedding failed:', pngErr.message);
     }
 
-    // Tier 2: Ultra-High Quality JPEG embedding (100% immune to PNG corruption bugs)
+    // Tier 2: Ultra-High Quality JPEG embedding
     if (!imageEmbedded) {
       try {
         const jpegData = canvas.toDataURL('image/jpeg', 0.98);
@@ -189,7 +199,9 @@ export const generateVoucherPDF = async (element, voucherNumber = 'VOUCHER') => 
       element.style.visibility = originalStyles.visibility;
       element.style.position = originalStyles.position;
       element.style.left = originalStyles.left;
+      element.style.top = originalStyles.top;
       element.style.width = originalStyles.width;
+      element.style.zIndex = originalStyles.zIndex;
     }
   }
 };

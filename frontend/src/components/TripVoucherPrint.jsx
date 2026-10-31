@@ -35,8 +35,8 @@ const TripVoucherPrint = ({ voucher = {} }) => {
   const advance = Number(voucher.advance) || 0;
   const balance = voucher.balance !== undefined ? Number(voucher.balance) : (totalAmount - advance);
 
-  const hasGuestSig = Boolean(voucher.guestSignature && voucher.guestSignature.length > 50 && voucher.guestSignature.startsWith('data:image/'));
-  const hasDriverSig = Boolean(voucher.driverSignature && voucher.driverSignature.length > 50 && voucher.driverSignature.startsWith('data:image/'));
+  const hasGuestSig = Boolean(voucher && voucher.guestSignature && typeof voucher.guestSignature === 'string' && voucher.guestSignature.length > 20);
+  const hasDriverSig = Boolean(voucher && voucher.driverSignature && typeof voucher.driverSignature === 'string' && voucher.driverSignature.length > 20);
 
   return (
     <div className="tv-print-doc">

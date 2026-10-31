@@ -13,7 +13,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm;
+    margin: 8mm;
   }
 
   /* Reset body and hide all default page content */
@@ -29,18 +29,22 @@
     print-color-adjust: exact !important;
   }
 
-  /* Hide the entire interactive application */
-  #root > *:not(.trip-voucher-print-wrapper) {
-    display: none !important;
+  /* Force exact color reproduction for backgrounds & borders across all print engines */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* Hide the interactive UI, navigation, buttons, and screen-only elements */
+  .no-print,
+  .no-print-screen,
+  .pdf-capture-container,
   header,
   nav,
   footer,
   button,
   input,
-  textarea,
-  .no-print {
+  textarea {
     display: none !important;
   }
 
@@ -71,6 +75,7 @@
     line-height: 1.35 !important;
     border: 1.5px solid #003D2F !important;
     box-sizing: border-box !important;
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
@@ -113,6 +118,7 @@
   .tv-print-section,
   .tv-print-payment-box,
   .tv-print-signatures {
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 }
