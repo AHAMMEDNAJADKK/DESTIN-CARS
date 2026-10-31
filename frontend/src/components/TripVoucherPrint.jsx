@@ -92,7 +92,7 @@ const TripVoucherPrint = ({ voucher = {} }) => {
             <th style={{ width: '33.34%' }}>Vehicle Number</th>
           </tr>
           <tr>
-            <td style={{ fontSize: '11pt', fontWeight: 800, color: '#003D2F', fontFamily: 'monospace' }}>
+            <td style={{ fontSize: '11pt', fontWeight: 800, color: '#003D2F', fontFamily: 'Arial, Helvetica, sans-serif' }}>
               {voucherNumber}
             </td>
             <td style={{ fontSize: '10pt', fontWeight: 600 }}>
@@ -201,21 +201,21 @@ const TripVoucherPrint = ({ voucher = {} }) => {
           <tr>
             <td>Taxi Hire Charges (Base / Distance / Time)</td>
             <td style={{ textAlign: 'right', color: '#6B7280', fontSize: '8.5pt' }}>Tariff</td>
-            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>
+            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'Arial, Helvetica, sans-serif' }}>
               {formatCurrency(taxiCharges)}
             </td>
           </tr>
           <tr>
             <td>Toll Gates & Parking Charges</td>
             <td style={{ textAlign: 'right', color: '#6B7280', fontSize: '8.5pt' }}>Actuals</td>
-            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>
+            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'Arial, Helvetica, sans-serif' }}>
               {formatCurrency(tollParking)}
             </td>
           </tr>
           <tr>
             <td>Night Bata / Driver Allowance</td>
             <td style={{ textAlign: 'right', color: '#6B7280', fontSize: '8.5pt' }}>Allowance</td>
-            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>
+            <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'Arial, Helvetica, sans-serif' }}>
               {formatCurrency(nightBata)}
             </td>
           </tr>
@@ -228,7 +228,7 @@ const TripVoucherPrint = ({ voucher = {} }) => {
           <div style={{ fontSize: '7.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#A7F3D0' }}>
             Total Charges
           </div>
-          <div style={{ fontSize: '13pt', fontWeight: 900, fontFamily: 'monospace', color: '#ffffff', marginTop: '1px' }}>
+          <div style={{ fontSize: '13pt', fontWeight: 900, fontFamily: 'Arial, Helvetica, sans-serif', color: '#ffffff', marginTop: '1px' }}>
             {formatCurrency(totalAmount)}
           </div>
         </div>
@@ -237,7 +237,7 @@ const TripVoucherPrint = ({ voucher = {} }) => {
           <div style={{ fontSize: '7.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#A7F3D0' }}>
             Advance Paid
           </div>
-          <div style={{ fontSize: '11pt', fontWeight: 800, fontFamily: 'monospace', color: '#E0E7FF', marginTop: '1px' }}>
+          <div style={{ fontSize: '11pt', fontWeight: 800, fontFamily: 'Arial, Helvetica, sans-serif', color: '#E0E7FF', marginTop: '1px' }}>
             {formatCurrency(advance)}
           </div>
         </div>
@@ -246,7 +246,7 @@ const TripVoucherPrint = ({ voucher = {} }) => {
           <div style={{ fontSize: '7pt', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
             Net Balance Due
           </div>
-          <div style={{ fontSize: '14pt', fontWeight: 900, fontFamily: 'monospace', marginTop: '1px' }}>
+          <div style={{ fontSize: '14pt', fontWeight: 900, fontFamily: 'Arial, Helvetica, sans-serif', marginTop: '1px' }}>
             {formatCurrency(balance)}
           </div>
         </div>
